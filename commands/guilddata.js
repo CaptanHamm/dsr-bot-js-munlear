@@ -1,5 +1,6 @@
 const xl = require('excel4node');
 const reducer = (accumulator, currentValue) => accumulator + currentValue;
+const rp = require('request-promise');
 
 exports.run = async (client, message, args, level) => { // eslint-disable-line no-unused-vars
   await message.react("🖐");
@@ -93,6 +94,24 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
     }
     i++;
   }
+
+  var ws3 = wb.addWorksheet('TW Speed farm');
+  const twSpeedFarm = await getTWSpeedFarm(client, roster);
+  var i = 1;
+  for (const [key, value] of Object.entries(twSpeedFarm)) {
+    var j = 1;
+    ws3.cell(j, i).string(key);
+    for (const val of value) {
+      j++;
+      if (i === 1) {
+        ws3.cell(j, i).string(val);
+      } else {
+        ws3.cell(j, i).number(val);
+      }
+    }
+    i++;
+  }
+
 
   var buffer = await wb.writeToBuffer();
   await message.channel.send('File:', {
@@ -284,6 +303,48 @@ async function getTWFarm(client, roster) {
         }
       }
       data[`${client.nameDict[toon.defId]} zetas`][i] = nbZetas;
+    }
+    i++;
+  }
+
+  return data;
+}
+
+async function getTWSpeedFarm(client, roster) {
+  // Initialize temp
+  const data = { Name: [] };
+  for (const toonId of Object.keys(client.nameDict)) {
+    data[client.nameDict[toonId]] = [];
+  }
+  
+  var options = {
+    headers: {
+        'User-Agent': 'Request-Promise'
+    },
+    json: true // Automatically parses the JSON string in the response
+  };
+  
+  // counts number of players, aka which row we're at
+  var i = 0;
+  for (const player of roster) {
+    data.Name.push(player.name);
+    
+    var player_options = Object.assign({}, options);
+    player_options.uri = `https://crinolo-swgoh.glitch.me/statCalc/api/characters/player/${player.allyCode}/?flags=withModCalc,gameStyle`;
+    
+    let stats = await rp(player_options);
+
+    // for each toon, put a 0. That way, even if the player doesn't have a 
+    // certain toon, we have a value.
+    for (const toonId of Object.keys(client.nameDict)) {
+      data[client.nameDict[toonId]].push(0);
+    }
+  
+    for (const toon of player.roster) {
+      // replace 0 with actual gear level
+      if(toon.defId in stats) {
+        data[client.nameDict[toon.defId]][i] = stats[toon.defId].stats.final.Speed;
+      }
     }
     i++;
   }
