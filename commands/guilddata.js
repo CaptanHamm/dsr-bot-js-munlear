@@ -256,47 +256,38 @@ async function getStats(client, roster) {
 
 async function getTWFarm(client, roster) {
   // Initialize temp
-  const temp = { Name: [] };
+  const data = { Name: [] };
   for (const toonId of Object.keys(client.nameDict)) {
-    temp[toonId] = [];
-    temp[`${toonId} zetas`] = [];
+    data[client.nameDict[toonId]] = [];
+    data[`${client.nameDict[toonId]} zetas`] = [];
   }
   
   // counts number of players, aka which row we're at
   var i = 0;
   for (const player of roster) {
-    temp.Name.push(player.name);
+    data.Name.push(player.name);
     
     // for each toon, put a 0. That way, even if the player doesn't have a 
     // certain toon, we have a value.
     for (const toonId of Object.keys(client.nameDict)) {
-      temp[toonId].push(0);
-      temp[`${toonId} zetas`].push(0);
+      data[client.nameDict[toonId]].push(0);
+      data[`${client.nameDict[toonId]} zetas`].push(0);
     }
   
     for (const toon of player.roster) {
       // replace 0 with actual gear level
-      temp[toon.defId][i] = toon.gear;
+      data[client.nameDict[toon.defId]][i] = toon.gear;
       let nbZetas = 0;
       for (const skill of toon.skills) {
         if (skill.isZeta && skill.tier >= 8) {
           nbZetas++;
         }
       }
-      temp[`${toon.defId} zetas`][i] = nbZetas;
+      data[`${client.nameDict[toon.defId]} zetas`][i] = nbZetas;
     }
     i++;
   }
-  const data = {};
-  for (const k of Object.keys(temp)) {
-    if (k === 'Name') {
-      data.Name = temp[k];
-    } else if (k.includes(' zetas')) {
-      data[`${client.nameDict[k.split(' ')[0]]} zetas`] = temp[k];
-    } else {
-      data[client.nameDict[k]] = temp[k];
-    }
-  }
+
   return data;
 }
 
