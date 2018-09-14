@@ -1,3 +1,4 @@
+const fuzz = require('fuzzball');
 // Returns the list of HSTR teams
 const hstrTeams = require("../data/hstrTeams.json");
 const MAX_HSTR_TEAMS_PER_EMBED = 20;
@@ -7,19 +8,48 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   await message.react("🖐");
   let options = 'p';
   if (args.length) {
-    options = args[args.length - 1];
+    options = args[0];
     options = options.replace(new RegExp('-', 'g'), '');
     options = Array.from(options);
     if (options.indexOf('p') < 0 && options.indexOf('c') < 0) {
-      options.push('p');
+      await message.channel.send(`\`\`\`js\nError: Please use option p or c.\n\`\`\``);
+      await message.react("☠");
+      return;
     }
-    // if (options.indexOf('p') < 0 && options.indexOf('c') < 0 && options.indexOf('1') < 0 && options.indexOf('2') < 0 && options.indexOf('3') < 0 && options.indexOf('4') < 0 ) {
-    //   await message.channel.send(`\`\`\`js\nError: Unrecognized option: ${options}.\n\`\`\``);
-    //   await message.react("☠");
-    //   return;
-    // }
+    if (options.indexOf('p') < 0 && options.indexOf('c') && options.indexOf('s') < 0 && options.indexOf('1') < 0 && options.indexOf('2') < 0 && options.indexOf('3') < 0 && options.indexOf('4') < 0 ) {
+      await message.channel.send(`\`\`\`js\nError: Unrecognized option: ${options}.\n\`\`\``);
+      await message.react("☠");
+      return;
+    }
   }
 
+  let search = null;
+  console.log(args);
+  console.log(options.indexOf('s'));
+  if (options.indexOf('s') >= 0 && args.length < 1) {
+    await message.channel.send(`\`\`\`js\nError: "search" option requires a search keyword.\n\`\`\``);
+    await message.react("☠");
+    return;
+  } 
+  
+  if (options.indexOf('s') < 0 && args.length > 1) {
+    await message.channel.send(`\`\`\`js\nWarning: if you are trying to filter by character, please use option "s".\n\`\`\``);
+    await message.react("⚠");
+  } 
+  
+  if (options.indexOf('s') >= 0) {
+    search = args[1];
+    const options = {scorer: fuzz.partial_token_sort_ratio};
+    const fuzz_res = fuzz.extract(search, getToonsFromHstrTeams(client), options);
+    console.log(fuzz_res);
+    if (fuzz_res[0][1] < 59) {
+      await message.channel.send(`\`\`\`js\nError: Could not find this character or this character is not commonly used in the raid.\n\`\`\``);
+      await message.react("☠");
+      return;      
+    }
+    search = Object.keys(client.nameDict).find(key => client.nameDict[key] === fuzz_res[0][0]);
+  }
+  
   let dm = await message.channel;
   if (options.indexOf('p') >= 0) {
     dm = await message.author;
@@ -32,11 +62,23 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
     }
   }
   if (!phases.length) {
+    for (const o of options) {
+      if (Number(o)) {
+        await message.channel.send(`\`\`\`js\nError: There is no phase ${o}.\n\`\`\``);
+        await message.react("☠");
+        return;
+      }
+    }
     phases = ALL_PHASES;
   }
 
-  const msg = getHstrTeams(client.nameDict, phases);
-  sortedPhases = Object.keys(msg).sort();
+  const msg = getHstrTeams(client.nameDict, phases, search);
+  if (Object.keys(msg).length === 0) {
+      await message.channel.send(`\`\`\`js\nNo team or phase found.\n\`\`\``);
+      await message.react("☠");
+      return;      
+  }
+  const sortedPhases = Object.keys(msg).sort();
   for(const phase of sortedPhases) {
     const teams = Object.keys(msg[phase]).sort();
     if (teams.length < MAX_HSTR_TEAMS_PER_EMBED) {
@@ -65,7 +107,11 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   await message.react("👍");
 };
 
-function getHstrTeams(charMedia, phaseFilter) {
+function getHstrTeams(charMedia, phaseFilter, search) {
+  let dontsearch = false;
+  if (search === null) {
+    dontsearch = true;
+  }
   const result = {};
   for (const phase of Object.keys(hstrTeams)) {
     if (phaseFilter.indexOf(phase) < 0) {
@@ -76,16 +122,23 @@ function getHstrTeams(charMedia, phaseFilter) {
     for (const t1 of Object.keys(teams)) {
       const team = teams[t1];
       let s = '';
+      let search_found = false;
       for (const t2 in team['TOONS']) {
         if (!team['TOONS'].hasOwnProperty(t2)) {
           continue;
         }
         const toon = team['TOONS'][t2];
+        if (!dontsearch && search === toon) {
+          search_found = true;
+        }
         if (charMedia.hasOwnProperty(toon)) {
           s += charMedia[toon] + ', ';
         } else {
           s += toon + ', ';
         }
+      }
+      if (!dontsearch && !search_found) {
+        continue;
       }
       s = s.slice(0, -2);
       if (team['ZETAS']) {
@@ -100,8 +153,21 @@ function getHstrTeams(charMedia, phaseFilter) {
       s += `. Goal: ${team['GOAL']}%`;
       result[phase][team['NAME']] = s;
     }
+    if (Object.keys(result[phase]).length === 0) {
+      delete result[phase];
+    }
   }
   return result;
+}
+
+function getToonsFromHstrTeams(client) {
+  let toons = [];
+  for (const phase in hstrTeams) {
+    for (const team of hstrTeams[phase]) {
+      toons = toons.concat(team.TOONS);
+    }
+  }
+  return [...new Set(toons)].map(x => client.nameDict[x]);
 }
 
 exports.conf = {
@@ -116,5 +182,5 @@ exports.help = {
   name: "sithraidteams",
   category: "Raid",
   description: "List of HSTR teams.",
-  usage: "sithraidteams (Options: [ p | c | 1 | 2 | 3 | 4 ])\nExamples: srt c\nsrt p134\np: private (sent via DM)\nc: channel (display in current channel)\n1, 2, 3, 4: show teams for each phase"
+  usage: "sithraidteams (Options: [ p | c | s | 1 | 2 | 3 | 4 ])\nExamples: srt c\nsrt p134\nsrt s wampa\np: private (sent via DM)\nc: channel (display in current channel)\ns: search for a characted (must provide a name)\n1, 2, 3, 4: show teams for each phase"
 };
