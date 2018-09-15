@@ -207,7 +207,7 @@ function getPlayerMods(client, data, type, minVal) {
     }
 
     if (data[d].secondary_1[0] === type) {
-      if (Number(data[d].secondary_1[1]) > minVal) {
+      if (Number(data[d].secondary_1[1]) >= minVal) {
         // mods.push(modToField(data[d], type));
         mods.push(data[d]);
         nb++;
@@ -215,21 +215,21 @@ function getPlayerMods(client, data, type, minVal) {
       }
     }
     if (data[d].secondary_2[0] === type) {
-      if (Number(data[d].secondary_2[1]) > minVal) {
+      if (Number(data[d].secondary_2[1]) >= minVal) {
         mods.push(data[d]);
         nb++;
         continue;
       }
     }
     if (data[d].secondary_3[0] === type) {
-      if (Number(data[d].secondary_3[1]) > minVal) {
+      if (Number(data[d].secondary_3[1]) >= minVal) {
         mods.push(data[d]);
         nb++;
         continue;
       }
     }
     if (data[d].secondary_4[0] === type) {
-      if (Number(data[d].secondary_4[1]) > minVal) {
+      if (Number(data[d].secondary_4[1]) >= minVal) {
         mods.push(data[d]);
         nb++;
         continue;
