@@ -40,12 +40,15 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   }
 
   const stats = getPlayerStats(client, data[0]);
+  const playerMods = client.getModsFromPlayer(data[0].roster);
+  const nbSpeedMods = getPlayerMods(client, playerMods, 'Speed', 10)[1];  
   // message.channel.send(`\`\`\`js\n${guild1.name}: ${JSON.stringify(stats1)}\n\`\`\``);
   const fields = [];
   Object.keys(stats).forEach(function (key) {
     let val = `${stats[key]}`;
     fields.push({ name: key, value: val });
   });
+  fields.push({ name: 'Number of 10+ speed mods', value: nbSpeedMods});
   await message.channel.send(client.createEmbedInDescription(data[0].name, fields));
 
   let options = [];
@@ -61,10 +64,8 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   }
   // [ a | t | l | d | s | o ]
   if (options.indexOf('a') >= 0 || options.indexOf('s') >= 0 || options.indexOf('o') >= 0) {
-    const playerMods = client.getModsFromPlayer(data[0].roster);
-
     if (options.indexOf('a') >= 0 || options.indexOf('s') >= 0) {
-      const speedMods = getPlayerMods(client, playerMods, 'Speed', 15);
+      const speedMods = getPlayerMods(client, playerMods, 'Speed', 15)[0];
       if (speedMods.length) {
         await message.channel.send(client.createEmbed(`${data[0].name}'s Top 6 Speed Mods`, speedMods));
       } else {
@@ -72,7 +73,7 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
       }
     }
     if (options.indexOf('a') >= 0 || options.indexOf('o') >= 0) {
-      const offMods = getPlayerMods(client, playerMods, 'Offense', 100);
+      const offMods = getPlayerMods(client, playerMods, 'Offense', 100)[0];
       if (offMods.length) {
         await message.channel.send(client.createEmbed(`${data[0].name}'s Top 6 Offense Mods`, offMods));
       } else {
@@ -199,6 +200,7 @@ function getPlayerStats(client, data) {
 
 function getPlayerMods(client, data, type, minVal) {
   let mods = [];
+  let nb = 0;
   for (const d in data) {
     if (!data.hasOwnProperty(d)) {
       continue;
@@ -208,24 +210,28 @@ function getPlayerMods(client, data, type, minVal) {
       if (Number(data[d].secondary_1[1]) > minVal) {
         // mods.push(modToField(data[d], type));
         mods.push(data[d]);
+        nb++;
         continue;
       }
     }
     if (data[d].secondary_2[0] === type) {
       if (Number(data[d].secondary_2[1]) > minVal) {
         mods.push(data[d]);
+        nb++;
         continue;
       }
     }
     if (data[d].secondary_3[0] === type) {
       if (Number(data[d].secondary_3[1]) > minVal) {
         mods.push(data[d]);
+        nb++;
         continue;
       }
     }
     if (data[d].secondary_4[0] === type) {
       if (Number(data[d].secondary_4[1]) > minVal) {
         mods.push(data[d]);
+        nb++;
         continue;
       }
     }
@@ -244,7 +250,7 @@ function getPlayerMods(client, data, type, minVal) {
   for (const m of Object.keys(mods)) {
     res.push(modToField(client, mods[m], type));
   }
-  return res;
+  return [res, nb];
 }
 
 function modToField(client, mod, type) {
