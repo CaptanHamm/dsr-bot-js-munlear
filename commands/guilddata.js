@@ -37,11 +37,11 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   let guildName;
   if(allycodes_input.length == 1) {
     let guild;
-    guildName = guild.name;
     try {
       guild = await client.swapi.fetchGuild({
         allycode: allycodes_input[0]
       });
+      guildName = guild.name;
     } catch(error) {
       await message.channel.send(`\`${error}\``);
       await message.react("☠");
