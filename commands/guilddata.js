@@ -301,8 +301,8 @@ async function getTWFarm(client, roster) {
   // Initialize temp
   const data = { Name: [] };
   for (const toonId of Object.keys(client.nameDict)) {
-    data[client.nameDict[toonId]] = [];
-    data[`${client.nameDict[toonId]} zetas`] = [];
+    data[client.nameDict[toonId].nameKey] = [];
+    data[`${client.nameDict[toonId].nameKey} zetas`] = [];
   }
   
   // counts number of players, aka which row we're at
@@ -313,20 +313,20 @@ async function getTWFarm(client, roster) {
     // for each toon, put a 0. That way, even if the player doesn't have a 
     // certain toon, we have a value.
     for (const toonId of Object.keys(client.nameDict)) {
-      data[client.nameDict[toonId]].push(0);
-      data[`${client.nameDict[toonId]} zetas`].push(0);
+      data[client.nameDict[toonId].nameKey].push(0);
+      data[`${client.nameDict[toonId].nameKey} zetas`].push(0);
     }
   
     for (const toon of player.roster) {
       // replace 0 with actual gear level
-      data[client.nameDict[toon.defId]][i] = toon.gear;
+      data[client.nameDict[toon.defId].nameKey][i] = toon.gear;
       let nbZetas = 0;
       for (const skill of toon.skills) {
         if (skill.isZeta && skill.tier >= 8) {
           nbZetas++;
         }
       }
-      data[`${client.nameDict[toon.defId]} zetas`][i] = nbZetas;
+      data[`${client.nameDict[toon.defId].nameKey} zetas`][i] = nbZetas;
     }
     i++;
   }
@@ -338,7 +338,7 @@ async function getTWSpeedFarm(client, roster) {
   // Initialize temp
   const data = { Name: [] };
   for (const toonId of Object.keys(client.nameDict)) {
-    data[client.nameDict[toonId]] = [];
+    data[client.nameDict[toonId].nameKey] = [];
   }
   
   var options = {
@@ -361,13 +361,13 @@ async function getTWSpeedFarm(client, roster) {
     // for each toon, put a 0. That way, even if the player doesn't have a 
     // certain toon, we have a value.
     for (const toonId of Object.keys(client.nameDict)) {
-      data[client.nameDict[toonId]].push(0);
+      data[client.nameDict[toonId].nameKey].push(0);
     }
   
     for (const toon of player.roster) {
       // replace 0 with actual gear level
       if(toon.defId in stats) {
-        data[client.nameDict[toon.defId]][i] = stats[toon.defId].stats.final.Speed;
+        data[client.nameDict[toon.defId].nameKey][i] = stats[toon.defId].stats.final.Speed;
       }
     }
     i++;

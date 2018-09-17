@@ -315,7 +315,7 @@ function analyzeGuildHstrReadiness(client, roster, noCap) {
           for (const te in temp) {
             const tem = temp[te];
             if (client.nameDict.hasOwnProperty(tem)) {
-              team_str.push(client.nameDict[tem]);
+              team_str.push(client.nameDict[tem].nameKey);
               break;
             }
           }

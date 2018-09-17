@@ -47,7 +47,7 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
       await message.react("☠");
       return;      
     }
-    search = Object.keys(client.nameDict).find(key => client.nameDict[key] === fuzz_res[0][0]);
+    search = Object.keys(client.nameDict).find(key => client.nameDict[key].nameKey === fuzz_res[0][0]);
   }
   
   let dm = await message.channel;
@@ -132,7 +132,7 @@ function getHstrTeams(charMedia, phaseFilter, search) {
           search_found = true;
         }
         if (charMedia.hasOwnProperty(toon)) {
-          s += charMedia[toon] + ', ';
+          s += charMedia[toon].nameKey + ', ';
         } else {
           s += toon + ', ';
         }
@@ -167,7 +167,7 @@ function getToonsFromHstrTeams(client) {
       toons = toons.concat(team.TOONS);
     }
   }
-  return [...new Set(toons)].map(x => client.nameDict[x]);
+  return [...new Set(toons)].map(x => client.nameDict[x].nameKey);
 }
 
 exports.conf = {

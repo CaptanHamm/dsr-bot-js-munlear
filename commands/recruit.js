@@ -19,7 +19,18 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   try {
     data = await client.swapi.fetchPlayer({ 
       allycode: allyCode,
-      enums: true
+      enums: true,
+      project: {
+        allyCode: 1,
+        name: 1,
+        level: 1,
+        guildName: 1,
+        stats: 1,
+        roster: 1,
+        arena: 1,
+        type: 1,
+        categoryIdList: 1
+      }
     });
   } catch(error) {
     await message.channel.send(`\`${error}\``);
@@ -83,15 +94,18 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   }
 
   if (options.indexOf('a') >= 0 || options.indexOf('t') >= 0) {
-    await message.channel.send('🚧 Sorry, TW is a work in progress 🚧')
+    await message.channel.send('🚧 Sorry, TW is a work in progress 🚧');
   }
 
   if (options.indexOf('a') >= 0 || options.indexOf('l') >= 0) {
-    await message.channel.send('🚧 Sorry, LSTB is a work in progress 🚧')
+    await message.channel.send('🚧 Sorry, LSTB is a work in progress 🚧');
   }
 
   if (options.indexOf('a') >= 0 || options.indexOf('d') >= 0) {
-    await message.channel.send('🚧 Sorry, DSTB is a work in progress 🚧')
+    const dstbStat = getTbStats(client, data[0], 'd');
+    console.log(dstbStat);
+    await message.channel.send('🚧 Sorry, DSTB is a work in progress 🚧');
+    // await message.channel.send(dstbStat);
   }
 
   if (options.length <= 0) {
@@ -112,7 +126,7 @@ function getPlayerStats(client, data) {
     if (!data.arena.char.squad.hasOwnProperty(toon)) {
       continue;
     }
-    res['Arena team'] += client.nameDict[data.arena.char.squad[toon].defId] + ', ';
+    res['Arena team'] += client.nameDict[data.arena.char.squad[toon].defId].nameKey + ', ';
     if (data.arena.char.squad[toon].type === 'UNITTYPELEADER') {
       res['Arena team'] = res['Arena team'].slice(0, -2);
       res['Arena team'] += ` (Leader), `;
@@ -127,13 +141,13 @@ function getPlayerStats(client, data) {
       continue;
     }
     if (data.arena.ship.squad[ship].type === 'UNITTYPECOMMANDER') {
-      capShip = client.nameDict[data.arena.ship.squad[ship].defId];
+      capShip = client.nameDict[data.arena.ship.squad[ship].defId].nameKey;
     }
     if (data.arena.ship.squad[ship].type === 'UNITTYPEDEFAULT') {
-      startShips.push(client.nameDict[data.arena.ship.squad[ship].defId]);
+      startShips.push(client.nameDict[data.arena.ship.squad[ship].defId].nameKey);
     }
     if (data.arena.ship.squad[ship].type === 'UNITTYPEREINFORCEMENT') {
-      reinforcements.push(client.nameDict[data.arena.ship.squad[ship].defId]);
+      reinforcements.push(client.nameDict[data.arena.ship.squad[ship].defId].nameKey);
     }
   }
   res['Arena Fleet'] = `\n*Capital Ship*: ${capShip}\n*Starting lineup*: `;
@@ -180,7 +194,7 @@ function getPlayerStats(client, data) {
         res['Traya'] = `Yes: Gear ${toon.gear}, ${toon.rarity} ⭐.`;
         if (zetas.length) {
           res['Traya'] += 'Zetas: ';
-          for (z in zetas) {
+          for (const z in zetas) {
             if (!zetas.hasOwnProperty(z)) {
               continue;
             }
@@ -276,7 +290,7 @@ function modToField(client, mod, type) {
       break;
   }
 
-  let value = `\`\`\`asciidoc\n= ${client.nameDict[mod.unit]} =\n`;
+  let value = `\`\`\`asciidoc\n= ${client.nameDict[mod.unit].nameKey} =\n`;
   if (mod.secondary_1[0] === type) {
     value += `[${mod.secondary_1[0]} ${mod.secondary_1[1]}]\n`;
   } else {
@@ -338,6 +352,20 @@ function modSort(a, b, type) {
   }
 
   return valA - valB;
+}
+
+function getTbStats(client, data, side) {
+  const toons = [];
+  const alignment = side === 'd' ? 'alignment_dark' : 'alignement_light';
+  data.roster.forEach(toon => {
+    const categoryIdList = client.nameDict[toon.defId].categoryIdList;
+    if(categoryIdList.includes(alignment)) {
+      if(categoryIdList.filter(x => x.includes('specialmission')).length) {
+        toons.push(toon.defId);
+      }
+    }
+  });
+  return toons;
 }
 
 exports.conf = {

@@ -58,10 +58,11 @@ const init = async () => {
     language: 'eng_us',
     project: {
       baseId: 1,
-      nameKey: 1
+      nameKey: 1,
+      categoryIdList: 1
     }
   });
-
+  
   let skills = await client.swapi.fetchData({
     collection: 'skillList',
     language: 'eng_us',
@@ -84,7 +85,7 @@ const init = async () => {
 
   client.nameDict = {};
   for (const u of unitsList) {
-    client.nameDict[u.baseId] = u.nameKey;
+    client.nameDict[u.baseId] = {nameKey: u.nameKey, categoryIdList: u.categoryIdList};
   }
 
   client.skillsDict = {};
