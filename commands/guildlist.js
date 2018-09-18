@@ -38,10 +38,10 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   }
 
   guild.roster.sort((a, b) => {
-    if (a.name < b.name) {
+    if (a.name.toLowerCase() < b.name.toLowerCase()) {
       return -1;
     }
-    if (a.name > b.name) {
+    if (a.name.toLowerCase() > b.name.toLowerCase()) {
       return 1;
     }
     return 0;
