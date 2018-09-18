@@ -37,15 +37,7 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
     return;
   }
 
-  guild.roster.sort((a, b) => {
-    if (a.name.toLowerCase() < b.name.toLowerCase()) {
-      return -1;
-    }
-    if (a.name.toLowerCase() > b.name.toLowerCase()) {
-      return 1;
-    }
-    return 0;
-  });
+  guild.roster.sort((a, b) => a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1);
   let roster = guild.roster.map(r => `${r.allyCode}: ${r.name}`);
 
   await message.channel.send(`\`\`\`asciidoc\n[${guild.name}]\n.Members: ${roster.length}/50\n${roster.join('\n')}\n\`\`\``);
