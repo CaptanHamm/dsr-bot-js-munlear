@@ -1,4 +1,6 @@
 // This command analyzes a roster for recruitment
+var Jimp = require('jimp');
+
 exports.run = async (client, message, args, level) => { // eslint-disable-line no-unused-vars
   await message.react("🖐");
   if (!args.length) {
@@ -17,7 +19,7 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
 
   let data;
   try {
-    data = await client.swapi.fetchPlayer({ 
+    data = await client.swapi.fetchPlayer({
       allycode: allyCode,
       enums: true,
       project: {
@@ -32,12 +34,12 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
         categoryIdList: 1
       }
     });
-  } catch(error) {
+  } catch (error) {
     await message.channel.send(`\`${error}\``);
     await message.react("☠");
     return;
   }
-  
+
   if (data.hasOwnProperty('error')) {
     await message.channel.send(`\`\`\`js\nError: ${data.error}.\n\`\`\``);
     await message.react("☠");
@@ -52,14 +54,14 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
 
   const stats = getPlayerStats(client, data[0]);
   const playerMods = client.getModsFromPlayer(data[0].roster);
-  const nbSpeedMods = getPlayerMods(client, playerMods, 'Speed', 10)[1];  
+  const nbSpeedMods = getPlayerMods(client, playerMods, 'Speed', 10)[1];
   // message.channel.send(`\`\`\`js\n${guild1.name}: ${JSON.stringify(stats1)}\n\`\`\``);
   const fields = [];
   Object.keys(stats).forEach(function (key) {
     let val = `${stats[key]}`;
     fields.push({ name: key, value: val });
   });
-  fields.push({ name: 'Number of 10+ speed mods', value: nbSpeedMods});
+  fields.push({ name: 'Number of 10+ speed mods', value: nbSpeedMods });
   await message.channel.send(client.createEmbedInDescription(data[0].name, fields));
 
   let options = [];
@@ -104,6 +106,45 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   if (options.indexOf('a') >= 0 || options.indexOf('d') >= 0) {
     const dstbStat = getTbStats(client, data[0], 'd');
     console.log(dstbStat);
+    const background = await Jimp.read('https://cdn.discordapp.com/attachments/491414900955021312/491442058951786497/background.png');
+    const mask = await Jimp.read('https://cdn.discordapp.com/attachments/491414900955021312/491418283548082217/mask.png');
+    const image = await Jimp.read('https://swgoh.gg/static/img/assets/tex.charui_traya.png');
+    const gear = await Jimp.read('https://cdn.discordapp.com/attachments/491414900955021312/491414957712211968/gear-icon-g12.png');
+    const bglevel = await Jimp.read('https://cdn.discordapp.com/attachments/491414900955021312/491439511520149505/levelbg-2.png');
+    const bggear = await Jimp.read('https://cdn.discordapp.com/attachments/491414900955021312/491453150553833473/gearbg.png');
+    const star = await Jimp.read('https://swgoh.gg/static/img/star.png');
+    const starInactive = await Jimp.read('https://swgoh.gg/static/img/star-inactive.png');
+    const zeta = await Jimp.read('https://swgoh.gg/static/img/assets/tex.skill_zeta.png');
+    const font = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE);
+    
+    background.resize(200, 100);
+    image.resize(80, 80);
+    mask.resize(80, 80);
+    bglevel.resize(25, 25);
+    bggear.resize(25, 25);
+    star.resize(18, 18);
+    starInactive.resize(18, 18);
+    zeta.resize(40, 40);
+    image.mask(mask, 0, 0);
+    image.blit(gear, 0, 0);
+    image.blit(zeta, -5, 43);
+    image.print(font, 10, 51, '3');
+    image.blit(bglevel, 50, 50); // gear
+    image.print(font, 52, 53, 'XII');
+
+    background.blit(image, 10, 10);
+    background.blit(image, 110, 10);
+    background.blit(bglevel, 36, 72); // level
+    background.print(font, 39, 77, '85'); // level
+    background.blit(star, -2, 25);
+    background.blit(star, 9, 11);
+    background.blit(star, 24, 3);
+    background.blit(star, 40, 0);
+    background.blit(starInactive, 56, 3);
+    background.blit(starInactive, 71, 11);
+    background.blit(starInactive, 82, 25);
+    const buffer = await background.getBufferAsync(Jimp.MIME_JPEG);
+    // await message.channel.send('Test', { files: [{ attachment: buffer }] });
     await message.channel.send('🚧 Sorry, DSTB is a work in progress 🚧');
     // await message.channel.send(dstbStat);
   }
@@ -359,8 +400,8 @@ function getTbStats(client, data, side) {
   const alignment = side === 'd' ? 'alignment_dark' : 'alignement_light';
   data.roster.forEach(toon => {
     const categoryIdList = client.nameDict[toon.defId].categoryIdList;
-    if(categoryIdList.includes(alignment)) {
-      if(categoryIdList.filter(x => x.includes('specialmission')).length) {
+    if (categoryIdList.includes(alignment)) {
+      if (categoryIdList.filter(x => x.includes('specialmission')).length) {
         toons.push(toon.defId);
       }
     }
