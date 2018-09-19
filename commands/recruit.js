@@ -1,6 +1,7 @@
 // This command analyzes a roster for recruitment
 var Jimp = require('jimp');
-
+const rp = require('request-promise');
+const romanNumerals = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII', 'XIII'];
 exports.run = async (client, message, args, level) => { // eslint-disable-line no-unused-vars
   await message.react("🖐");
   if (!args.length) {
@@ -52,17 +53,17 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
     return;
   }
 
-  const stats = getPlayerStats(client, data[0]);
-  const playerMods = client.getModsFromPlayer(data[0].roster);
-  const nbSpeedMods = getPlayerMods(client, playerMods, 'Speed', 10)[1];
-  // message.channel.send(`\`\`\`js\n${guild1.name}: ${JSON.stringify(stats1)}\n\`\`\``);
-  const fields = [];
-  Object.keys(stats).forEach(function (key) {
-    let val = `${stats[key]}`;
-    fields.push({ name: key, value: val });
-  });
-  fields.push({ name: 'Number of 10+ speed mods', value: nbSpeedMods });
-  await message.channel.send(client.createEmbedInDescription(data[0].name, fields));
+  // const stats = getPlayerStats(client, data[0]);
+  // const playerMods = client.getModsFromPlayer(data[0].roster);
+  // const nbSpeedMods = getPlayerMods(client, playerMods, 'Speed', 10)[1];
+  // // message.channel.send(`\`\`\`js\n${guild1.name}: ${JSON.stringify(stats1)}\n\`\`\``);
+  // const fields = [];
+  // Object.keys(stats).forEach(function (key) {
+  //   let val = `${stats[key]}`;
+  //   fields.push({ name: key, value: val });
+  // });
+  // fields.push({ name: 'Number of 10+ speed mods', value: nbSpeedMods });
+  // await message.channel.send(client.createEmbedInDescription(data[0].name, fields));
 
   let options = [];
   if (args.length > 1) {
@@ -104,48 +105,11 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   }
 
   if (options.indexOf('a') >= 0 || options.indexOf('d') >= 0) {
-    const dstbStat = getTbStats(client, data[0], 'd');
-    console.log(dstbStat);
-    const background = await Jimp.read('https://cdn.discordapp.com/attachments/491414900955021312/491442058951786497/background.png');
-    const mask = await Jimp.read('https://cdn.discordapp.com/attachments/491414900955021312/491418283548082217/mask.png');
-    const image = await Jimp.read('https://swgoh.gg/static/img/assets/tex.charui_traya.png');
-    const gear = await Jimp.read('https://cdn.discordapp.com/attachments/491414900955021312/491414957712211968/gear-icon-g12.png');
-    const bglevel = await Jimp.read('https://cdn.discordapp.com/attachments/491414900955021312/491439511520149505/levelbg-2.png');
-    const bggear = await Jimp.read('https://cdn.discordapp.com/attachments/491414900955021312/491453150553833473/gearbg.png');
-    const star = await Jimp.read('https://swgoh.gg/static/img/star.png');
-    const starInactive = await Jimp.read('https://swgoh.gg/static/img/star-inactive.png');
-    const zeta = await Jimp.read('https://swgoh.gg/static/img/assets/tex.skill_zeta.png');
-    const font = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE);
-    
-    background.resize(200, 100);
-    image.resize(80, 80);
-    mask.resize(80, 80);
-    bglevel.resize(25, 25);
-    bggear.resize(25, 25);
-    star.resize(18, 18);
-    starInactive.resize(18, 18);
-    zeta.resize(40, 40);
-    image.mask(mask, 0, 0);
-    image.blit(gear, 0, 0);
-    image.blit(zeta, -5, 43);
-    image.print(font, 10, 51, '3');
-    image.blit(bglevel, 50, 50); // gear
-    image.print(font, 52, 53, 'XII');
-
-    background.blit(image, 10, 10);
-    background.blit(image, 110, 10);
-    background.blit(bglevel, 36, 72); // level
-    background.print(font, 39, 77, '85'); // level
-    background.blit(star, -2, 25);
-    background.blit(star, 9, 11);
-    background.blit(star, 24, 3);
-    background.blit(star, 40, 0);
-    background.blit(starInactive, 56, 3);
-    background.blit(starInactive, 71, 11);
-    background.blit(starInactive, 82, 25);
-    const buffer = await background.getBufferAsync(Jimp.MIME_JPEG);
-    // await message.channel.send('Test', { files: [{ attachment: buffer }] });
-    await message.channel.send('🚧 Sorry, DSTB is a work in progress 🚧');
+    const buffers = await getTbStats(client, data[0], 'd');
+    for(const b of buffers) {
+      await message.channel.send(b.name, { files: [{ attachment: b.buffer }] });
+    }
+    // await message.channel.send('🚧 Sorry, DSTB is a work in progress 🚧');
     // await message.channel.send(dstbStat);
   }
 
@@ -395,18 +359,88 @@ function modSort(a, b, type) {
   return valA - valB;
 }
 
-function getTbStats(client, data, side) {
-  const toons = [];
+async function getTbStats(client, data, side) {
   const alignment = side === 'd' ? 'alignment_dark' : 'alignement_light';
-  data.roster.forEach(toon => {
+
+  var options = {
+    headers: {
+      'User-Agent': 'Request-Promise'
+    },
+    uri: 'https://swgoh.gg/api/characters/?format=json',
+    json: true // Automatically parses the JSON string in the response
+  };
+
+  let media = await rp(options);
+
+  const background = await Jimp.read('./assets/img/background.png');
+  const mask = await Jimp.read('./assets/img/mask.png');
+  const bglevel = await Jimp.read('./assets/img/levelbg-2.png');
+  const bggear = await Jimp.read('./assets/img/gearbg.png');
+  const star = await Jimp.read('./assets/img/star.png');
+  const starInactive = await Jimp.read('./assets/img/star-inactive.png');
+  const zeta = await Jimp.read('./assets/img/tex.skill_zeta.png');
+  const font = await Jimp.loadFont(Jimp.FONT_SANS_16_WHITE);
+  mask.resize(80, 80);
+  bglevel.resize(25, 25);
+  bggear.resize(25, 25);
+  star.resize(18, 18);
+  starInactive.resize(18, 18);
+  zeta.resize(40, 40);
+
+  const images = { Empire: [], 'Bounty Hunter': [], };
+  for (const toon of data.roster) {
     const categoryIdList = client.nameDict[toon.defId].categoryIdList;
     if (categoryIdList.includes(alignment)) {
       if (categoryIdList.filter(x => x.includes('specialmission')).length) {
-        toons.push(toon.defId);
+        const imgLink = media.filter(x => x.base_id === toon.defId)[0].image;
+        const image = await Jimp.read(`https:${imgLink}`);
+        const gear = await Jimp.read(`./assets/img/gear-icon-g${toon.gear}.png`);
+        image.resize(80, 80);
+        image.mask(mask, 0, 0);
+        image.blit(gear, 0, 0);
+        const nbZetas = toon.skills.filter(x => x.tier === 8 && x.isZeta).length;
+        if (nbZetas) {
+          image.blit(zeta, -5, 43);
+          image.print(font, 10, 51, nbZetas);
+        }
+        image.blit(bglevel, 50, 50); // gear
+        image.print(font, 52, 53, romanNumerals[toon.gear - 1]);
+        if (categoryIdList.filter(x => x.includes('affiliation_empire')).length) {
+          images['Empire'].push({ img: image, level: toon.level, rarity: toon.rarity });
+        } else if (categoryIdList.filter(x => x.includes('profession_bountyhunter')).length) {
+          images['Bounty Hunter'].push({ img: image, level: toon.level, rarity: toon.rarity });
+        }
       }
     }
-  });
-  return toons;
+  }
+
+  const buffers = [];
+  for (const [key, values] of Object.entries(images)) {
+    const background = await Jimp.read('./assets/img/background.png');
+    background.resize(100 * values.length, 100);
+    let imgX = 10, imgY = 10;
+    let bglevelX = 36, bglevelY = 72;
+    let levelfontX = 39, levelfontY = 77;
+    let starX = [-2, 9, 24, 40, 56, 71, 82], starY = [25, 11, 3, 0, 3, 11, 25];
+    for (i of values) {
+      background.blit(i.img, imgX, 10);
+      background.blit(bglevel, bglevelX, 72); // level
+      background.print(font, levelfontX, 77, i.level); // level    
+      for (var r = 0; r < i.rarity; r++) {
+        background.blit(star, starX[r], starY[r]);
+      }
+      for (r; r < 7; r++) {
+        background.blit(starInactive, starX[r], starY[r]);
+      }
+      imgX += 100;
+      bglevelX += 100;
+      levelfontX += 100;
+      starX = starX.map(x => x + 100);
+    }
+    const b = await background.getBufferAsync(Jimp.MIME_JPEG);
+    buffers.push({name: key, buffer: b});
+  }
+  return buffers;
 }
 
 exports.conf = {
