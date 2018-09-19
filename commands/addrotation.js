@@ -43,8 +43,8 @@ exports.conf = {
   enabled: false,
   guildOnly: false,
   aliases: ['ar'],
-  // permLevel: "Bot Owner"
-  permLevel: "User"
+  permLevel: "Bot Owner"
+  // permLevel: "User"
 };
 
 exports.help = {
