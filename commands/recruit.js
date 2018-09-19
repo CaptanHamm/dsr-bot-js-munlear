@@ -101,7 +101,10 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   }
 
   if (options.indexOf('a') >= 0 || options.indexOf('l') >= 0) {
-    await message.channel.send('🚧 Sorry, LSTB is a work in progress 🚧');
+    const buffers = await getTbStats(client, data[0], 'l');
+    for(const b of buffers) {
+      await message.channel.send(b.name, { files: [{ attachment: b.buffer }] });
+    }
   }
 
   if (options.indexOf('a') >= 0 || options.indexOf('d') >= 0) {
@@ -362,12 +365,24 @@ function modSort(a, b, type) {
 async function getTbStats(client, data, side) {
   let tags = [];
   let alignment = null;
+  let images = null;
+  let tagToName = null;
   if(side === 'd') {
     tags = new Set(['affiliation_empire', 'profession_bountyhunter']);
     alignment = 'alignment_dark';
+    images = { Empire: [], 'Bounty Hunter': [] };
+    tagToName = {
+      affiliation_empire: 'Empire',
+      profession_bountyhunter: 'Bounty Hunter'
+    }
   } else {
-    tags = new Set([]);
-    alignment = 'alignement_light';
+    tags = new Set(['affiliation_rogue_one', 'affiliation_phoenix']);
+    alignment = 'alignment_light';
+    images = { 'Rogue One': [], 'Phoenix': [] };
+    tagToName = {
+      affiliation_rogue_one: 'Rogue One',
+      affiliation_phoenix: 'Phoenix'
+    }    
   }
 
   var options = {
@@ -380,7 +395,6 @@ async function getTbStats(client, data, side) {
 
   let media = await rp(options);
 
-  const background = await Jimp.read('./assets/img/background.png');
   const mask = await Jimp.read('./assets/img/mask.png');
   const bglevel = await Jimp.read('./assets/img/levelbg-2.png');
   const bggear = await Jimp.read('./assets/img/gearbg.png');
@@ -395,12 +409,15 @@ async function getTbStats(client, data, side) {
   starInactive.resize(18, 18);
   zeta.resize(40, 40);
 
-  const images = { Empire: [], 'Bounty Hunter': [], };
+  
   for (const toon of data.roster) {
     const categoryIdList = client.nameDict[toon.defId].categoryIdList;
     const setCatList = new Set(categoryIdList);
     let intersection = new Set([...tags].filter(x => setCatList.has(x)));
     intersection = [...intersection];
+    if (categoryIdList.filter(x => x.includes('specialmission')).length) {
+      console.log(categoryIdList);
+    }
     if (intersection.length) {
       const med = media.filter(x => x.base_id === toon.defId);
       if(!med.length) {
@@ -419,11 +436,16 @@ async function getTbStats(client, data, side) {
       }
       image.blit(bglevel, 50, 50); // gear
       image.print(font, 52, 53, romanNumerals[toon.gear - 1]);
-      if (categoryIdList.filter(x => x.includes('affiliation_empire')).length) {
-        images['Empire'].push({ img: image, level: toon.level, rarity: toon.rarity });
-      } else if (categoryIdList.filter(x => x.includes('profession_bountyhunter')).length) {
-        images['Bounty Hunter'].push({ img: image, level: toon.level, rarity: toon.rarity });
+      for(const t of tags) {
+        if (categoryIdList.filter(x => x.includes(t)).length) {
+          images[tagToName[t]].push({ img: image, level: toon.level, rarity: toon.rarity });
+        }
       }
+      // if (categoryIdList.filter(x => x.includes('affiliation_empire')).length) {
+      //   images['Empire'].push({ img: image, level: toon.level, rarity: toon.rarity });
+      // } else if (categoryIdList.filter(x => x.includes('profession_bountyhunter')).length) {
+      //   images['Bounty Hunter'].push({ img: image, level: toon.level, rarity: toon.rarity });
+      // }
     }
   }
 
