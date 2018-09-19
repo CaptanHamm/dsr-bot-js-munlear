@@ -6,7 +6,7 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   await message.react("🖐");
 
   if (!args.length) {
-    await message.channel.send(`\`\`\`js\nError: gdata needs an ally code.\n\`\`\``);
+    await message.channel.send(`\`\`\`js\nError: register needs an ally code.\n\`\`\``);
     await message.react("☠");
     return;
   }
