@@ -1,7 +1,7 @@
 exports.run = async (client, message, args, level) => { // eslint-disable-line no-unused-vars
   await message.react("🖐");
   if (!args.length) {
-    await message.channel.send(`\`\`\`js\nError: gdata needs an ally code.\n\`\`\``);
+    await message.channel.send(`\`\`\`js\nError: guildlist needs an ally code.\n\`\`\``);
     await message.react("☠");
     return;
   }
