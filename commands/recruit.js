@@ -53,17 +53,17 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
     return;
   }
 
-  // const stats = getPlayerStats(client, data[0]);
-  // const playerMods = client.getModsFromPlayer(data[0].roster);
-  // const nbSpeedMods = getPlayerMods(client, playerMods, 'Speed', 10)[1];
-  // // message.channel.send(`\`\`\`js\n${guild1.name}: ${JSON.stringify(stats1)}\n\`\`\``);
-  // const fields = [];
-  // Object.keys(stats).forEach(function (key) {
-  //   let val = `${stats[key]}`;
-  //   fields.push({ name: key, value: val });
-  // });
-  // fields.push({ name: 'Number of 10+ speed mods', value: nbSpeedMods });
-  // await message.channel.send(client.createEmbedInDescription(data[0].name, fields));
+  const stats = getPlayerStats(client, data[0]);
+  const playerMods = client.getModsFromPlayer(data[0].roster);
+  const nbSpeedMods = getPlayerMods(client, playerMods, 'Speed', 10)[1];
+  // message.channel.send(`\`\`\`js\n${guild1.name}: ${JSON.stringify(stats1)}\n\`\`\``);
+  const fields = [];
+  Object.keys(stats).forEach(function (key) {
+    let val = `${stats[key]}`;
+    fields.push({ name: key, value: val });
+  });
+  fields.push({ name: 'Number of 10+ speed mods', value: nbSpeedMods });
+  await message.channel.send(client.createEmbedInDescription(data[0].name, fields));
 
   let options = [];
   if (args.length > 1) {
