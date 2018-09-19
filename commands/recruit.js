@@ -360,7 +360,15 @@ function modSort(a, b, type) {
 }
 
 async function getTbStats(client, data, side) {
-  const alignment = side === 'd' ? 'alignment_dark' : 'alignement_light';
+  let tags = [];
+  let alignment = null;
+  if(side === 'd') {
+    tags = new Set(['affiliation_empire', 'profession_bountyhunter']);
+    alignment = 'alignment_dark';
+  } else {
+    tags = new Set([]);
+    alignment = 'alignement_light';
+  }
 
   var options = {
     headers: {
@@ -390,26 +398,31 @@ async function getTbStats(client, data, side) {
   const images = { Empire: [], 'Bounty Hunter': [], };
   for (const toon of data.roster) {
     const categoryIdList = client.nameDict[toon.defId].categoryIdList;
-    if (categoryIdList.includes(alignment)) {
-      if (categoryIdList.filter(x => x.includes('specialmission')).length) {
-        const imgLink = media.filter(x => x.base_id === toon.defId)[0].image;
-        const image = await Jimp.read(`https:${imgLink}`);
-        const gear = await Jimp.read(`./assets/img/gear-icon-g${toon.gear}.png`);
-        image.resize(80, 80);
-        image.mask(mask, 0, 0);
-        image.blit(gear, 0, 0);
-        const nbZetas = toon.skills.filter(x => x.tier === 8 && x.isZeta).length;
-        if (nbZetas) {
-          image.blit(zeta, -5, 43);
-          image.print(font, 10, 51, nbZetas);
-        }
-        image.blit(bglevel, 50, 50); // gear
-        image.print(font, 52, 53, romanNumerals[toon.gear - 1]);
-        if (categoryIdList.filter(x => x.includes('affiliation_empire')).length) {
-          images['Empire'].push({ img: image, level: toon.level, rarity: toon.rarity });
-        } else if (categoryIdList.filter(x => x.includes('profession_bountyhunter')).length) {
-          images['Bounty Hunter'].push({ img: image, level: toon.level, rarity: toon.rarity });
-        }
+    const setCatList = new Set(categoryIdList);
+    let intersection = new Set([...tags].filter(x => setCatList.has(x)));
+    intersection = [...intersection];
+    if (intersection.length) {
+      const med = media.filter(x => x.base_id === toon.defId);
+      if(!med.length) {
+        continue;
+      }
+      const imgLink = media.filter(x => x.base_id === toon.defId)[0].image;
+      const image = await Jimp.read(`https:${imgLink}`);
+      const gear = await Jimp.read(`./assets/img/gear-icon-g${toon.gear}.png`);
+      image.resize(80, 80);
+      image.mask(mask, 0, 0);
+      image.blit(gear, 0, 0);
+      const nbZetas = toon.skills.filter(x => x.tier === 8 && x.isZeta).length;
+      if (nbZetas) {
+        image.blit(zeta, -5, 43);
+        image.print(font, 10, 51, nbZetas);
+      }
+      image.blit(bglevel, 50, 50); // gear
+      image.print(font, 52, 53, romanNumerals[toon.gear - 1]);
+      if (categoryIdList.filter(x => x.includes('affiliation_empire')).length) {
+        images['Empire'].push({ img: image, level: toon.level, rarity: toon.rarity });
+      } else if (categoryIdList.filter(x => x.includes('profession_bountyhunter')).length) {
+        images['Bounty Hunter'].push({ img: image, level: toon.level, rarity: toon.rarity });
       }
     }
   }
@@ -422,7 +435,7 @@ async function getTbStats(client, data, side) {
     let bglevelX = 36, bglevelY = 72;
     let levelfontX = 39, levelfontY = 77;
     let starX = [-2, 9, 24, 40, 56, 71, 82], starY = [25, 11, 3, 0, 3, 11, 25];
-    for (i of values) {
+    for (const i of values) {
       background.blit(i.img, imgX, 10);
       background.blit(bglevel, bglevelX, 72); // level
       background.print(font, levelfontX, 77, i.level); // level    
