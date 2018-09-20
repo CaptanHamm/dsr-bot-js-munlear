@@ -8,6 +8,7 @@ config.json
 config.js
 data/
 test.js
+.eslinrc.json
 
 # Runtime data
 pids
@@ -60,4 +61,3 @@ typings/
 
 # dotenv environment variables file
 .env
-
