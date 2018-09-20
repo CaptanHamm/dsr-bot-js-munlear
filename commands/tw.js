@@ -22,7 +22,7 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
     guild1 = await client.swapi.fetchGuild({
       allycode: allycode1
     });
-  } catch(error) {
+  } catch (error) {
     await message.channel.send(`\`${error}\``);
     await message.react("☠");
     return;
@@ -44,7 +44,7 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   let roster1;
   try {
     roster1 = await client.swapi.fetchPlayer({ allycode: allyCodes1 });
-  } catch(error) {
+  } catch (error) {
     await message.channel.send(`\`${error}\``);
     await message.react("☠");
     return;
@@ -69,7 +69,7 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
       guild2 = await client.swapi.fetchGuild({
         allycode: allycode2
       });
-    } catch(error) {
+    } catch (error) {
       await message.channel.send(`\`${error}\``);
       await message.react("☠");
       return;
@@ -91,7 +91,7 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
     let roster2;
     try {
       roster2 = await client.swapi.fetchPlayer({ allycode: allyCodes2 });
-    } catch(error) {
+    } catch (error) {
       await message.channel.send(`\`${error}\``);
       await message.react("☠");
       return;
