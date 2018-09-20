@@ -1,5 +1,6 @@
 const xl = require('excel4node');
 const reducer = (accumulator, currentValue) => accumulator + currentValue;
+const rp = require('request-promise');
 
 exports.run = async (client, message, args, level) => { // eslint-disable-line no-unused-vars
   await message.react("🖐");
@@ -8,45 +9,69 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
     await message.react("☠");
     return;
   }
-  let allycode = args[0].replace(/-/g, '');
-  allycode = await client.checkOrGetAllyCode(allycode, message.author.id);
-  if (!client.isAllyCode(allycode)) {
-    await message.channel.send(`\`\`\`js\nError: ${args[0]} is not an ally code.\n\`\`\``);
-    await message.react("☠");
-    return;
-  }
-  allycode = Number(allycode);
-
-  let guild;
-  try {
-    guild = await client.swapi.fetchGuild({
-      allycode: allycode
-    });
-  } catch(error) {
-    await message.channel.send(`\`${error}\``);
-    await message.react("☠");
-    return;
-  }
   
-  if (guild.hasOwnProperty('error')) {
-    await message.channel.send(`\`\`\`js\nError: ${guild.error}.\n\`\`\``);
+  const allycodes_input = [];
+  let allyCodes;
+  let a = 0;
+  while (args[a]) {
+    let allycode = args[a].replace(/-/g, '');
+    allycode = await client.checkOrGetAllyCode(allycode, message.author.id);
+    if(allycode) {
+      allycodes_input.push(allycode);
+    } else if(args[a] === 'me') {
+      await message.channel.send(`You are not registered (use "register <yourallycode>" to use "me")`);
+      await message.react("☠");
+      return;
+    } else {
+      break;
+    }
+    a++;
+  }
+
+  if (!allycodes_input.length) {
+    await message.channel.send(`\`\`\`js\nError: sithraid needs an ally code.\n\`\`\``);
     await message.react("☠");
     return;
   }
 
-  if (guild.hasOwnProperty('response')) {
-    await message.channel.send(`\`\`\`js\nError: Request time out requesting roster for ${allycode}\n\`\`\``);
-    await message.react("☠");
-    return;
+  let guildName;
+  if(allycodes_input.length == 1) {
+    let guild;
+    try {
+      guild = await client.swapi.fetchGuild({
+        allycode: allycodes_input[0]
+      });
+      guildName = guild.name;
+    } catch(error) {
+      await message.channel.send(`\`${error}\``);
+      await message.react("☠");
+      return;
+    }
+    
+    if (guild.hasOwnProperty('error')) {
+      await message.channel.send(`\`\`\`js\nError: ${guild.error}.\n\`\`\``);
+      await message.react("☠");
+      return;
+    }
+  
+    if (guild.hasOwnProperty('response')) {
+      await message.channel.send(`\`\`\`js\nError: Request time out requesting roster for ${allycodes_input[0]}\n\`\`\``);
+      await message.react("☠");
+      return;
+    }
+    allyCodes = guild.roster.map(r => r.allyCode);
+  } else {
+    allyCodes = allycodes_input;
   }
 
-  let allyCodes = guild.roster.map(r => r.allyCode);
+  
   let roster;
   try {
     roster = await client.swapi.fetchPlayer({
       allycodes: allyCodes,
       enums: true
     });
+    guildName = roster[0].guildName;
   } catch(error) {
     await message.channel.send(`\`${error}\``);
     await message.react("☠");
@@ -66,7 +91,7 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   const stats = await getStats(client, roster);
 
   var wb = new xl.Workbook();
-  var ws = wb.addWorksheet(guild.name);
+  var ws = wb.addWorksheet(guildName);
   for (var i = 0; i < stats.length; i++) {
     for (var j = 0; j < stats[i].length; j++) {
       if (j === 0 || i === 0) {
@@ -94,11 +119,29 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
     i++;
   }
 
+  var ws3 = wb.addWorksheet('TW Speed farm');
+  const twSpeedFarm = await getTWSpeedFarm(client, roster);
+  i = 1;
+  for (const [key, value] of Object.entries(twSpeedFarm)) {
+    var j = 1;
+    ws3.cell(j, i).string(key);
+    for (const val of value) {
+      j++;
+      if (i === 1) {
+        ws3.cell(j, i).string(val);
+      } else {
+        ws3.cell(j, i).number(val);
+      }
+    }
+    i++;
+  }
+
+
   var buffer = await wb.writeToBuffer();
   await message.channel.send('File:', {
     files: [{
       attachment: buffer,
-      name: `${guild.name}.xlsx`
+      name: `${guildName}.xlsx`
     }]
   });
   await message.react("👍");
@@ -256,47 +299,80 @@ async function getStats(client, roster) {
 
 async function getTWFarm(client, roster) {
   // Initialize temp
-  const temp = { Name: [] };
+  const data = { Name: [] };
   for (const toonId of Object.keys(client.nameDict)) {
-    temp[toonId] = [];
-    temp[`${toonId} zetas`] = [];
+    data[client.nameDict[toonId].nameKey] = [];
+    data[`${client.nameDict[toonId].nameKey} zetas`] = [];
   }
   
   // counts number of players, aka which row we're at
   var i = 0;
   for (const player of roster) {
-    temp.Name.push(player.name);
+    data.Name.push(player.name);
     
     // for each toon, put a 0. That way, even if the player doesn't have a 
     // certain toon, we have a value.
     for (const toonId of Object.keys(client.nameDict)) {
-      temp[toonId].push(0);
-      temp[`${toonId} zetas`].push(0);
+      data[client.nameDict[toonId].nameKey].push(0);
+      data[`${client.nameDict[toonId].nameKey} zetas`].push(0);
     }
   
     for (const toon of player.roster) {
       // replace 0 with actual gear level
-      temp[toon.defId][i] = toon.gear;
+      data[client.nameDict[toon.defId].nameKey][i] = toon.gear;
       let nbZetas = 0;
       for (const skill of toon.skills) {
         if (skill.isZeta && skill.tier >= 8) {
           nbZetas++;
         }
       }
-      temp[`${toon.defId} zetas`][i] = nbZetas;
+      data[`${client.nameDict[toon.defId].nameKey} zetas`][i] = nbZetas;
     }
     i++;
   }
-  const data = {};
-  for (const k of Object.keys(temp)) {
-    if (k === 'Name') {
-      data.Name = temp[k];
-    } else if (k.includes(' zetas')) {
-      data[`${client.nameDict[k.split(' ')[0]]} zetas`] = temp[k];
-    } else {
-      data[client.nameDict[k]] = temp[k];
-    }
+
+  return data;
+}
+
+async function getTWSpeedFarm(client, roster) {
+  // Initialize temp
+  const data = { Name: [] };
+  for (const toonId of Object.keys(client.nameDict)) {
+    data[client.nameDict[toonId].nameKey] = [];
   }
+  
+  var options = {
+    headers: {
+        'User-Agent': 'Request-Promise'
+    },
+    json: true // Automatically parses the JSON string in the response
+  };
+  
+  // counts number of players, aka which row we're at
+  var i = 0;
+  for (const player of roster) {
+    data.Name.push(player.name);
+    
+    var player_options = Object.assign({}, options);
+    player_options.uri = `https://crinolo-swgoh.glitch.me/statCalc/api/characters/player/${player.allyCode}/?flags=withModCalc,gameStyle`;
+    
+    let stats = await rp(player_options);
+
+    // for each toon, put a 0. That way, even if the player doesn't have a 
+    // certain toon, we have a value.
+    for (const toonId of Object.keys(client.nameDict)) {
+      data[client.nameDict[toonId].nameKey].push(0);
+    }
+  
+    for (const toon of player.roster) {
+      // replace 0 with actual gear level
+      if(toon.defId in stats) {
+        data[client.nameDict[toon.defId].nameKey][i] = stats[toon.defId].stats.final.Speed;
+      }
+    }
+    i++;
+  }
+
   return data;
 }
 

@@ -1,7 +1,7 @@
 exports.run = async (client, message, args, level) => { // eslint-disable-line no-unused-vars
   await message.react("🖐");
   if (!args.length) {
-    await message.channel.send(`\`\`\`js\nError: gdata needs an ally code.\n\`\`\``);
+    await message.channel.send(`\`\`\`js\nError: guildlist needs an ally code.\n\`\`\``);
     await message.react("☠");
     return;
   }
@@ -13,18 +13,18 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
     return;
   }
   allycode = Number(allycode);
-  
+
   let guild;
   try {
     guild = await client.swapi.fetchGuild({
       allycode: allycode
     });
-  } catch(error) {
+  } catch (error) {
     await message.channel.send(`\`${error}\``);
     await message.react("☠");
     return;
   }
-  
+
   if (guild.hasOwnProperty('error')) {
     await message.channel.send(`\`\`\`js\nError: ${guild.error}.\n\`\`\``);
     await message.react("☠");
@@ -37,10 +37,11 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
     return;
   }
 
-  let roster = guild.roster.map(r => `${r.name}: ${r.allyCode}`);
-  
-  await message.channel.send(`\`\`\`js\n${guild.name}\nMembers: ${roster.length}/50\n${roster.join('\n')}\n\`\`\``);
-  
+  guild.roster.sort((a, b) => a.name.toLowerCase() > b.name.toLowerCase() ? 1 : -1);
+  let roster = guild.roster.map(r => `${r.allyCode}: ${r.name}`);
+
+  await message.channel.send(`\`\`\`asciidoc\n[${guild.name}]\n.Members: ${roster.length}/50\n${roster.join('\n')}\n\`\`\``);
+
   await message.react("👍");
 };
 
@@ -48,7 +49,7 @@ exports.conf = {
   enabled: true,
   guildOnly: false,
   aliases: ['gl'],
-  permLevel: "Bot Support"
+  permLevel: "User"
 };
 
 exports.help = {

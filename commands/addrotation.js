@@ -40,11 +40,11 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
 };
 
 exports.conf = {
-  enabled: true,
+  enabled: false,
   guildOnly: false,
   aliases: ['ar'],
-  // permLevel: "Bot Owner"
-  permLevel: "User"
+  permLevel: "Bot Owner"
+  // permLevel: "User"
 };
 
 exports.help = {
