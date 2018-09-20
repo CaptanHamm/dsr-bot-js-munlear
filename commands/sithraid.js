@@ -98,6 +98,7 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
     }
     fields.push({ name: msg[m][0], value: msg[m][1] });
   }
+  await message.reply("Here are the details of your personal or guild readiness:");
   await message.channel.send(client.createEmbed(title, fields));
 
   if (options.indexOf('d') >= 0) {

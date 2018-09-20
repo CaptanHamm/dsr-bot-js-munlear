@@ -47,7 +47,7 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   } catch(error) {
     await message.channel.send(`\`${error}\``);
     await message.react("☠");
-    return;    
+    return;
   }
 
   const stats1 = await getGuildStats(client, roster1);
@@ -108,6 +108,7 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
       val = `${' '.repeat(lfill)}${val}`;
       fields.push({ name: key, value: `\`\`\`js\n${val}\`\`\`` });
     }
+    await message.reply("Here are the details for the TW matchup specified: ");
     await message.channel.send(client.createEmbed(guild1.name + " vs " + guild2.name, fields));
   } else {
     for (const key of Object.keys(stats1)) {
@@ -119,6 +120,7 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
       val = `${' '.repeat(lfill)}${val}`;
       fields.push({ name: key, value: `\`\`\`js\n${val}\`\`\`` });
     }
+    await message.reply("Here are the details for the guild you specified: ");
     await message.channel.send(client.createEmbed(guild1.name, fields));
   }
   await message.react("👍");
