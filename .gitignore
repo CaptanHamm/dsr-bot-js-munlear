@@ -10,6 +10,12 @@ data/
 test.js
 .eslintrc.json
 
+##############
+#WIP COMMANDS#
+commands/jtr.js
+commands/compare.js
+##############
+
 # Runtime data
 pids
 *.pid

@@ -17,16 +17,16 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
 
   let data;
   try {
-    data = await client.swapi.fetchPlayer({ 
+    data = await client.swapi.fetchPlayer({
       allycode: allyCode,
       enums: true
     });
-  } catch(error) {
+  } catch (error) {
     await message.channel.send(`\`${error}\``);
     await message.react("☠");
     return;
   }
-  
+
   if (data.hasOwnProperty('error')) {
     await message.channel.send(`\`\`\`js\nError: ${data.error}.\n\`\`\``);
     await message.react("☠");
@@ -42,8 +42,8 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   const stats = getPlayerStats(client, data[0]);
   // message.channel.send(`\`\`\`js\n${guild1.name}: ${JSON.stringify(stats1)}\n\`\`\``);
   const fields = [];
-  Object.keys(stats).forEach(function (key) {
-    let val = `${stats[key]}`;
+  Object.keys(stats).forEach(function(key) {
+    const val = `${stats[key]}`;
     fields.push({ name: key, value: val });
   });
   await message.channel.send(client.createEmbedInDescription(data[0].name, fields));
@@ -82,15 +82,15 @@ exports.run = async (client, message, args, level) => { // eslint-disable-line n
   }
 
   if (options.indexOf('a') >= 0 || options.indexOf('t') >= 0) {
-    await message.channel.send('🚧 Sorry, TW is a work in progress 🚧')
+    await message.channel.send('🚧 Sorry, TW is a work in progress 🚧');
   }
 
   if (options.indexOf('a') >= 0 || options.indexOf('l') >= 0) {
-    await message.channel.send('🚧 Sorry, LSTB is a work in progress 🚧')
+    await message.channel.send('🚧 Sorry, LSTB is a work in progress 🚧');
   }
 
   if (options.indexOf('a') >= 0 || options.indexOf('d') >= 0) {
-    await message.channel.send('🚧 Sorry, DSTB is a work in progress 🚧')
+    await message.channel.send('🚧 Sorry, DSTB is a work in progress 🚧');
   }
 
   if (options.length <= 0) {
@@ -119,8 +119,8 @@ function getPlayerStats(client, data) {
   }
   res['Arena team'] = res['Arena team'].slice(0, -2);
   let capShip = null;
-  let startShips = [];
-  let reinforcements = [];
+  const startShips = [];
+  const reinforcements = [];
   for (const ship in data.arena.ship.squad) {
     if (!data.arena.ship.squad.hasOwnProperty(ship)) {
       continue;
@@ -155,34 +155,30 @@ function getPlayerStats(client, data) {
   res['Number of G11'] = 0;
   res['Number of G12'] = 0;
   data.roster.forEach(toon => {
-    let tempZetas = 0;
+    /*let tempZetas = 0;
     let isG11 = false;
     let isG12 = false;
+    */
     if (toon.gear == 11) {
       res['Number of G11']++;
-      isG11 = true;
     }
     if (toon.gear == 12) {
       res['Number of G12']++;
-      isG12 = true;
     }
 
-    let zetas = [];
+    const zetas = [];
     toon.skills.forEach(skill => {
       if (skill.isZeta && skill.tier >= 8) {
         zetas.push(`${client.skillsDict[skill.id].name} (${client.skillsDict[skill.id].type})`);
       }
     });
-
+    let z;
     switch (toon.defId) {
       case 'DARTHTRAYA':
-        res['Traya'] = `Yes: Gear ${toon.gear}, ${toon.rarity} ⭐.`;
+        res['Traya'] = `Yes: Gear ${toon.gear}, ${toon.rarity} ⭐ / `;
         if (zetas.length) {
           res['Traya'] += 'Zetas: ';
           for (z in zetas) {
-            if (!zetas.hasOwnProperty(z)) {
-              continue;
-            }
             if (!zetas.hasOwnProperty(z)) {
               continue;
             }
@@ -240,7 +236,7 @@ function getPlayerMods(client, data, type, minVal) {
   }
   mods = mods.reverse();
   mods = mods.slice(0, 6);
-  let res = [];
+  const res = [];
   for (const m of Object.keys(mods)) {
     res.push(modToField(client, mods[m], type));
   }
