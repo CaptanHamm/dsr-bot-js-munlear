@@ -14,6 +14,7 @@ test.js
 #WIP COMMANDS#
 commands/jtr.js
 commands/compare.js
+commands/eval.js
 ##############
 
 # Runtime data

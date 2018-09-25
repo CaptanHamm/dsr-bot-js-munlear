@@ -23,10 +23,11 @@ exports.conf = {
   aliases: [],
   permLevel: "Bot Owner"
 };
-
+/*
 exports.help = {
   name: "eval",
   category: "System",
   description: "Evaluates arbitrary javascript.",
   usage: "eval [...code]"
 };
+*/
